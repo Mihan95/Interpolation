@@ -16,7 +16,7 @@ int main (int argc, char *argv[])
 {
   QApplication app (argc, argv);
 
-  //коммент изменение в ветке
+  //коммент изменение master
 
   QMainWindow *window = new QMainWindow;
   QMenuBar *tool_bar = new QMenuBar (window);
