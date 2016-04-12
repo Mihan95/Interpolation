@@ -16,8 +16,6 @@ int main (int argc, char *argv[])
 {
   QApplication app (argc, argv);
 
-  //коммент изменение master after settings
-
   QMainWindow *window = new QMainWindow;
   QMenuBar *tool_bar = new QMenuBar (window);
   Window *graph_area = new Window (window);

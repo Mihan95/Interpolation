@@ -94,49 +94,50 @@ int CubeSplineCoeff( int n, double *x, double *f_x, double *a )
 
 double CubeSplinePol( double *alf, double *x, double *f_x, int n, double p )
 {
-    /*int head = 0, tail = n - 1;
+    int head = 0, tail = n - 1;
     int old_tail = tail;
     double a = x[head], b = x[tail];
     int h;
-    if ( fabs( b - p ) > 1e-15 )
-    {
+
         while( 1 )
         {
-            if( fabs( head - tail ) == 1 )
-                break;
-            if(( p > a || fabs( a - p ) < 1e-15 ) && ( p < b ))
+            if ( fabs( b - p ) > 1e-12 )
             {
-                old_tail = tail;
-                tail++;
-                tail /= 2;
-                if (tail == head)
-                    tail++;
-                b = x[tail];
+
+                if(( p > a || fabs( a - p ) < 1e-15 ) && ( p < b))
+                {
+                    if( tail - head == 1 )
+                        break;
+                    old_tail = tail;
+                    tail = tail - (tail - head) / 2;
+
+                    b = x[tail];
+                }
+                else
+                {
+                    head = tail;
+                    tail = old_tail;
+                    a = b;
+                    b = x[tail];
+                }
             }
             else
             {
                 head = tail;
-                tail = old_tail;
-                a = b;
-                b = x[tail];
+                break;
             }
         }
         h = head;
-    }
-    else h = tail;
 
-    return  f_x[h]
-            + alf[h]         * (p - x[h])
-            + alf[n + h]     * (p - x[h]) * (p - x[h])
-            + alf[2 * n + h] * (p - x[h]) * (p - x[h]) * (p - x[h + 1]);*/
-    int h = -1;
+
+    /*int h = -1;
     for (int i = 0; i < n - 1; i++)
     {
         h++;
         if (((p > x[i]) || (fabs (x[i] - p) < 1e-15))
           && (p < x[i + 1]))
                 break;
-    }
+    }*/
 
     return  f_x[h]
             + alf[3 * n + h] * (p - x[h])

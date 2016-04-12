@@ -18,7 +18,7 @@ using namespace std;
 
 double f (double x)
 {
-  return x * x * x;
+  return x*cos(x);
 }
 
 Window::Window (QWidget *parent)
@@ -60,7 +60,6 @@ int Window::parse_command_line (int argc, char *argv[])
 /// render graph
 void Window::paintEvent (QPaintEvent * /* event */)
 {
-
   ChebCoeff (n, f_x_cheb, q_cheb);
   CubeSplineCoeff (n, x_spline, f_x_spline, q_spline);
 
@@ -68,7 +67,7 @@ void Window::paintEvent (QPaintEvent * /* event */)
   double x1, x2, y1, y2;
   double max_y, min_y, old_min_y, old_max_y;
   double delta_y;
-  double delta_x = (b - a) / /*(width())*/(b-a);
+  double delta_x = (b - a) / (width());
 
   // calculate min and max for current function
   max_y = min_y = 0;
@@ -114,7 +113,7 @@ void Window::paintEvent (QPaintEvent * /* event */)
 
   // draw approximated line for graph
   //Cheb
-  /*x1 = a;
+  x1 = a;
   y1 = ChebPol (q_cheb, n, x1, a, b);
   for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x)
   {
@@ -125,9 +124,10 @@ void Window::paintEvent (QPaintEvent * /* event */)
   }
   x2 = b;
   y2 = ChebPol (q_cheb, n, x2, a, b);
-  painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));*/
+  painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));
 
   //Spline
+  painter.setPen("blue");
   x1 = a;
   y1 = CubeSplinePol (q_spline, x_spline, f_x_spline, n, x1);
   for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x)
@@ -139,6 +139,21 @@ void Window::paintEvent (QPaintEvent * /* event */)
   }
   x2 = b;
   y2 = CubeSplinePol (q_spline, x_spline, f_x_spline, n, x2);
+
+  painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));
+
+  painter.setPen("green");
+  x1 = a;
+  y1 = f(x1);
+  for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x)
+  {
+      y2 = f(x2);
+      painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));
+
+      x1 = x2, y1 = y2;
+  }
+  x2 = b;
+  y2 = f(x2);
 
   painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));
 
@@ -178,8 +193,6 @@ void Window::paintEvent (QPaintEvent * /* event */)
 
   // restore previously saved Coordinate System
   painter.restore ();
-
-
 }
 
 void Window::points_cheb()
@@ -218,7 +231,7 @@ void Window::more_points()
 {
 
 
-    if (n <= 50)
+    if (n <= 500)
     {
         delete [] x_cheb;
         delete [] f_x_cheb;
