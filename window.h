@@ -11,6 +11,10 @@ class Window : public QWidget
 private:
   double a;
   double b;
+  bool isRepaintCheb;
+  bool isRepaintSpline;
+  int n_cheb;
+  int n_spline;
 
 public:
   Window (QWidget *parent);
@@ -23,8 +27,6 @@ public:
   double *q_spline;
   double *x_spline;
   double *f_x_spline;
-
-  int n;
 
   void points_cheb();
   void points_spline();
