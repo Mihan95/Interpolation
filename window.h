@@ -15,6 +15,8 @@ private:
   bool isRepaintSpline;
   int n_cheb;
   int n_spline;
+  int method_id;
+  double scale;
 
 public:
   Window (QWidget *parent);
@@ -30,11 +32,16 @@ public:
 
   void points_cheb();
   void points_spline();
-  int parse_command_line (int argc, char *argv[]);
+  int  parse_command_line (int argc, char *argv[]);
 
 public slots:
   void more_points ();
   void less_points ();
+  void change_method ();
+  void delta_func ();
+  void minus_delta_func ();
+  void more_zoom ();
+  void less_zoom ();
 
 protected:
   void paintEvent (QPaintEvent *event);
