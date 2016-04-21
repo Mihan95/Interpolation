@@ -18,7 +18,7 @@ using namespace std;
 
 double f (double x)
 {
-  return x*x*x;
+  return exp(x);
 }
 
 Window::Window (QWidget *parent)
@@ -30,8 +30,19 @@ Window::Window (QWidget *parent)
   n_spline = DEFAULT_N;
   isRepaintCheb   = true;
   isRepaintSpline = true;
+  isRedrowCheb    = true;
   method_id = 0;
   scale = 1;
+}
+
+Window::~Window()
+{
+    delete [] x_cheb;
+    delete [] f_x_cheb;
+    delete [] x_spline;
+    delete [] f_x_spline;
+    delete [] q_cheb;
+    delete [] q_spline;
 }
 
 QSize Window::minimumSizeHint () const
@@ -61,7 +72,11 @@ int Window::parse_command_line (int argc, char *argv[])
       || n <= 0)
     return -2;
 
+  if (n < 4) return -1;
+
   n_cheb   = n;
+  if (n_cheb > 50 )
+      n_cheb = 50;
   n_spline = n;
   return 0;
 }
@@ -87,11 +102,11 @@ void Window::paintEvent (QPaintEvent * /* event */)
   double delta_x = (b - a) / (width());
 
   //calculate recidual
-  double spline_res, cheb_res;
+  double spline_res = 0, cheb_res = 0;
   //Spline
   painter.setPen( "aqua" );
   x1 = a;
-  y1 = fabs( CubeSplinePol (q_spline, x_spline, f_x_spline, n_spline, x1) - f(x1) );
+  y1 = fabs( CubeSplinePol (q_spline, x_spline, f_x_spline, n_spline, a) - f(a) );
   spline_res = y1;
   for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x)
   {
@@ -103,30 +118,35 @@ void Window::paintEvent (QPaintEvent * /* event */)
       x1 = x2, y1 = y2;
   }
   x2 = b;
-  y2 = fabs( CubeSplinePol (q_spline, x_spline, f_x_spline, n_spline, x2) - f(x2) );
+  y2 = fabs( CubeSplinePol (q_spline, x_spline, f_x_spline, n_spline, b) - f(b) );
 
   if( spline_res < y2 )
       spline_res = y2;
 
+
+
   //Cheb
-  painter.setPen( "fuchsia" );
-  x1 = a;
-  y1 = fabs( ChebPol (q_cheb, n_cheb, x1, a, b) - f(x1) );
-  cheb_res = y1;
-  for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x)
+  if( isRedrowCheb == true )
   {
+      painter.setPen( "fuchsia" );
+      x1 = a;
+      y1 = fabs( ChebPol (q_cheb, n_cheb, x1, a, b) - f(x1) );
+      cheb_res = y1;
+      for (x2 = x1 + delta_x; x2 < b + 1e-6; x2 += delta_x)
+      {
+          y2 = fabs( ChebPol (q_cheb, n_cheb, x2, a, b) - f(x2) );
+
+          if( cheb_res < y2 )
+              cheb_res = y2;
+
+          x1 = x2, y1 = y2;
+      }
+      x2 = b;
       y2 = fabs( ChebPol (q_cheb, n_cheb, x2, a, b) - f(x2) );
 
-      if( cheb_res < y2 )
+      if( cheb_res  < y2 )
           cheb_res = y2;
-
-      x1 = x2, y1 = y2;
   }
-  x2 = b;
-  y2 = fabs( ChebPol (q_cheb, n_cheb, x2, a, b) - f(x2) );
-
-  if( cheb_res  < y2 )
-      cheb_res = y2;
 
   // calculate min and max for current function
   if( method_id == 0 )
@@ -158,9 +178,11 @@ void Window::paintEvent (QPaintEvent * /* event */)
 
   // make Coordinate Transformations
   painter.translate (0.5 * width (), 0.5 * height ());
-  painter.scale (width () / (b - a), - height () / (max_y - min_y));
-  painter.translate (-0.5 * (a + b), -0.5 * (min_y + max_y));
 
+  painter.scale (width () / (b - a), - height () / (max_y - min_y));
+  painter.setPen( "red" );
+  painter.translate (-0.5 * (a + b), -0.5 * (min_y + max_y));
+  painter.drawLine (QPointF (0, 2 * height()), QPointF (0, -2 * height()));
   painter.scale(1, scale);
 
   //draw axis
@@ -173,7 +195,7 @@ void Window::paintEvent (QPaintEvent * /* event */)
   if  ((min_y < 0) && (min_y > -1))
             min_y = -1;
 
-  painter.drawLine (QPointF (0, height() / scale), QPointF (0, -height() / scale));
+
 
   min_y = old_min_y;
   max_y = old_max_y;
@@ -181,36 +203,40 @@ void Window::paintEvent (QPaintEvent * /* event */)
   painter.setPen ( "purple" );
 
   // draw approximated line for graph
-  //Cheb
+
   if( method_id == 0 )
   {
-      x1 = a;
-      y1 = ChebPol (q_cheb, n_cheb, x1, a, b);
-      for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x)
+      //Cheb
+      if ( isRedrowCheb == true )
       {
+          x1 = a;
+          y1 = ChebPol (q_cheb, n_cheb, x1, a, b);
+          for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x)
+          {
+              y2 = ChebPol (q_cheb, n_cheb, x2, a, b);
+              painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));
+
+              x1 = x2, y1 = y2;
+          }
+          x2 = b;
           y2 = ChebPol (q_cheb, n_cheb, x2, a, b);
           painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));
 
-          x1 = x2, y1 = y2;
-      }
-      x2 = b;
-      y2 = ChebPol (q_cheb, n_cheb, x2, a, b);
-      painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));
+          //Spline
+          painter.setPen( "blue" );
+          x1 = a;
+          y1 = CubeSplinePol (q_spline, x_spline, f_x_spline, n_spline, x1);
+          for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x)
+          {
+              y2 = CubeSplinePol (q_spline, x_spline, f_x_spline, n_spline, x2);
+              painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));
 
-      //Spline
-      painter.setPen( "blue" );
-      x1 = a;
-      y1 = CubeSplinePol (q_spline, x_spline, f_x_spline, n_spline, x1);
-      for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x)
-      {
+              x1 = x2, y1 = y2;
+          }
+          x2 = b;
           y2 = CubeSplinePol (q_spline, x_spline, f_x_spline, n_spline, x2);
           painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));
-
-          x1 = x2, y1 = y2;
       }
-      x2 = b;
-      y2 = CubeSplinePol (q_spline, x_spline, f_x_spline, n_spline, x2);
-      painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));
   }
 
   //draw residual graphs
@@ -235,21 +261,24 @@ void Window::paintEvent (QPaintEvent * /* event */)
   painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));
 
   //Cheb
-  painter.setPen( "fuchsia" );
-  x1 = a;
-  y1 = fabs( ChebPol (q_cheb, n_cheb, x1, a, b) - f(x1) );
-  for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x)
+  if ( isRedrowCheb == true )
   {
+      painter.setPen( "fuchsia" );
+      x1 = a;
+      y1 = fabs( ChebPol (q_cheb, n_cheb, x1, a, b) - f(x1) );
+      for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x)
+      {
+          y2 = fabs( ChebPol (q_cheb, n_cheb, x2, a, b) - f(x2) );
+
+          painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));
+
+          x1 = x2, y1 = y2;
+      }
+      x2 = b;
       y2 = fabs( ChebPol (q_cheb, n_cheb, x2, a, b) - f(x2) );
 
       painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));
-
-      x1 = x2, y1 = y2;
-  }
-  x2 = b;
-  y2 = fabs( ChebPol (q_cheb, n_cheb, x2, a, b) - f(x2) );
-
-  painter.drawLine (QPointF (x1, y1), QPointF (x2, y2));
+      }
   }
 
   //draw function
@@ -272,39 +301,17 @@ void Window::paintEvent (QPaintEvent * /* event */)
   }
 
   //draw mesh
-  painter.setPen (QPen(Qt::gray, 0, Qt::DotLine));
-  delta_x = (b - a) / (n_spline - 1);
-  x1 = a;
-  for (int i = 0; i < n_spline; i++)
+  if ( n_spline <= 1024 )
   {
-    painter.drawLine (QPointF (x1, height() / scale), QPointF (x1, -height() / scale));
-    x1 += delta_x;
+      painter.setPen (QPen(Qt::gray, 0, Qt::DotLine));
+      delta_x = (b - a) / (n_spline - 1);
+      x1 = a;
+      for (int i = 0; i < n_spline; i++)
+      {
+        painter.drawLine (QPointF (x1, 2 * height() / scale), QPointF (x1, - 2 * height() / scale));
+        x1 += delta_x;
+      }
   }
-  //draw arrows
-  /*painter.setPen("red");
-  QPolygonF polygon;
-  QPolygonF polygon1;
-
-  polygon << QPointF( b/1.025, max_y/25 );
-  polygon << QPointF( b, 0 );
-  polygon << QPointF( b/1.025, -max_y/25 );
-
-  double p = (b - a) / (max_y - min_y);
-
-  polygon1 << QPointF(max_y/1.04, p*max_y/45);
-  polygon1 << QPointF(max_y, 0 );
-  polygon1 << QPointF(max_y/1.04, -p*max_y/45);
-
-  painter.setBrush( QBrush(Qt::red) );
-  painter.drawConvexPolygon( polygon );
-
-  double arrowAngle = 90;
-
-  painter.rotate( arrowAngle );
-  painter.drawConvexPolygon( polygon1 );
-  arrowAngle = -90;
-  painter.rotate( arrowAngle );*/
-
   // restore previously saved Coordinate System
   painter.restore ();
 
@@ -381,6 +388,7 @@ void Window::more_points()
 
         points_cheb();
     }
+    else isRedrowCheb = false;
 
     delete [] x_spline;
     delete [] f_x_spline;
@@ -397,7 +405,7 @@ void Window::more_points()
 
 void Window::less_points()
 {
-    if (n_spline > 2)
+    if (n_spline > 7)
     {
 
         delete [] x_spline;
@@ -419,6 +427,7 @@ void Window::less_points()
             delete [] q_cheb;
 
             isRepaintCheb = true;
+            isRedrowCheb =  true;
 
             points_cheb();
         }
@@ -428,7 +437,7 @@ void Window::less_points()
     }
     else
     {
-        QMessageBox::warning (0, "Achtung, fatal error!",
+        QMessageBox::warning (0, "Fatal error!",
                               "It is not possible to devide 'Number of Points'");
         update();
     }

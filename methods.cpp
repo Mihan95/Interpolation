@@ -98,46 +98,33 @@ double CubeSplinePol( double *alf, double *x, double *f_x, int n, double p )
     int old_tail = tail;
     double a = x[head], b = x[tail];
     int h;
+    double old_b = b;
 
         while( 1 )
         {
-            if ( fabs( b - p ) > 1e-12 )
-            {
-
-                if(( p > a || fabs( a - p ) < 1e-15 ) && ( p < b))
-                {
-                    if( tail - head == 1 )
-                        break;
-                    old_tail = tail;
-                    tail = tail - (tail - head) / 2;
-
-                    b = x[tail];
-                }
-                else
-                {
-                    head = tail;
-                    tail = old_tail;
-                    a = b;
-                    b = x[tail];
-                }
-            }
-            else
+            if (p > old_b)
             {
                 head = tail;
                 break;
             }
+            if(( p > a || fabs( a - p ) < 1e-15 ) && (p < b))
+            {
+                if( tail - head == 1 )
+                    break;
+                old_tail = tail;
+                tail = tail - (tail - head) / 2;
+
+                b = x[tail];
+            }
+            else
+            {
+                head = tail;
+                tail = old_tail;
+                a = b;
+                b = x[tail];
+            }
         }
         h = head;
-
-
-    /*int h = -1;
-    for (int i = 0; i < n - 1; i++)
-    {
-        h++;
-        if (((p > x[i]) || (fabs (x[i] - p) < 1e-15))
-          && (p < x[i + 1]))
-                break;
-    }*/
 
     return  f_x[h]
             + alf[3 * n + h] * (p - x[h])

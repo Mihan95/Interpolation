@@ -40,8 +40,8 @@ int main (int argc, char *argv[])
   action = tool_bar->addAction ("E&xit", window, SLOT (close ()));
   action->setShortcut (QString ("Ctrl+X"));
 
-  action = tool_bar->addAction( "&Change method", graph_area, SLOT( change_method() ));
-  action->setShortcut( QString( "Ctrl+C" ) );
+  action = tool_bar->addAction( "&Residual", graph_area, SLOT( change_method() ));
+  action->setShortcut( QString( "Ctrl+R" ) );
 
   action = tool_bar->addAction( "&Delta function", graph_area, SLOT( delta_func() ));
   action->setShortcut( QString( "Ctrl+D" ));
@@ -62,5 +62,7 @@ int main (int argc, char *argv[])
   window->setWindowTitle ("Graph");
 
   window->show ();
-  return app.exec ();
+  int err = app.exec ();
+  delete window;
+  return err;
 }

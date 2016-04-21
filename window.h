@@ -17,6 +17,7 @@ private:
   int n_spline;
   int method_id;
   double scale;
+  bool isRedrowCheb;
 
 public:
   Window (QWidget *parent);
@@ -33,6 +34,8 @@ public:
   void points_cheb();
   void points_spline();
   int  parse_command_line (int argc, char *argv[]);
+
+ ~Window();
 
 public slots:
   void more_points ();
